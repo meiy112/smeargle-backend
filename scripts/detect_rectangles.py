@@ -10,10 +10,9 @@ def detect_rectangles(image_path):
         return []
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
     ret, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
 
-    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     rectangles = []
 
     for contour in contours:
@@ -43,7 +42,7 @@ if __name__ == "__main__":
     
     result = {
         "title": title,
-        "rectangles": rects
+        "data": rects
     }
 
     print(json.dumps(result))
