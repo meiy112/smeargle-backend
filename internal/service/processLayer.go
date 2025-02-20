@@ -1,12 +1,13 @@
-package main
+package service
 
 import (
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"sync"
-	"io/ioutil"
 )
 
 type Layer struct {
@@ -14,7 +15,7 @@ type Layer struct {
 	Canvas string
 }
 
-func processLayer(layer Layer, wg *sync.WaitGroup, results chan<- string) {
+func ProcessLayer(layer Layer, wg *sync.WaitGroup, results chan<- string) {
 	defer wg.Done()
 
 	data, err := base64.StdEncoding.DecodeString(layer.Canvas)
@@ -23,7 +24,7 @@ func processLayer(layer Layer, wg *sync.WaitGroup, results chan<- string) {
 		return
 	}
 
-	tmpfile, err := ioutil.TempFile("", "canvas-*.png")
+	tmpfile, err := ioutil.TempFile("images", "canvas-*.png")
 	if err != nil {
 		results <- fmt.Sprintf("Error creating temp file for %s: %v", layer.Title, err)
 		return
@@ -52,7 +53,7 @@ func processLayer(layer Layer, wg *sync.WaitGroup, results chan<- string) {
 }
 
 func main() {
-	imgData, err := ioutil.ReadFile("../images/smeargle.jpg")
+	imgData, err := ioutil.ReadFile("images/smeargle.jpg")
 	if err != nil {
 		log.Fatalf("Error reading image file: %v", err)
 	}
@@ -68,7 +69,7 @@ func main() {
 	results := make(chan string, 1)
 
 	wg.Add(1)
-	go processLayer(sampleLayer, &wg, results)
+	go ProcessLayer(sampleLayer, &wg, results)
 
 	wg.Wait()
 	close(results)
