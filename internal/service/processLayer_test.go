@@ -1,13 +1,21 @@
-package main
+package service
 
 import (
 	"encoding/base64"
+	"io/ioutil"
+	"log"
 	"sync"
 	"testing"
 )
 
 func TestProcessLayer(t *testing.T) {
-	sampleBase64 := "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PyLGzQAAAABJRU5ErkJggg=="
+	imgData, err := ioutil.ReadFile("images/smeargle.jpg")
+	if err != nil {
+		log.Fatalf("Error reading image file: %v", err)
+	}
+
+	sampleBase64 := base64.StdEncoding.EncodeToString(imgData)
+
 	sampleLayer := Layer{
 		Title:  "Box",
 		Canvas: sampleBase64,
@@ -17,7 +25,7 @@ func TestProcessLayer(t *testing.T) {
 	results := make(chan string, 1)
 
 	wg.Add(1)
-	go processLayer(sampleLayer, &wg, results)
+	go ProcessLayer(sampleLayer, &wg, results)
 	wg.Wait()
 	close(results)
 
