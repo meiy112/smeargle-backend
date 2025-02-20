@@ -2,7 +2,6 @@ package main
 
 import (
     "encoding/base64"
-    "encoding/json"
     "fmt"
     "io/ioutil"
     "net/http"
@@ -45,7 +44,13 @@ func processLayer(layer Layer, wg *sync.WaitGroup, results chan<- string) {
     }
     tmpfile.Close()
 
-    cmd := exec.Command("python3", "process_image.py", tmpfile.Name(), layer.Title)
+    var cmd *exec.Cmd
+    if layer.Title == "text" {
+        cmd = exec.Command("python3", "scripts/detect_text.py", tmpfile.Name())
+    } else {
+        cmd = exec.Command("python3", "scripts/detect_rectangles.py", tmpfile.Name(), layer.Title)
+    }
+
     output, err := cmd.CombinedOutput()
     if err != nil {
         results <- fmt.Sprintf("Python error for %s: %v, output: %s", layer.Title, err, output)
