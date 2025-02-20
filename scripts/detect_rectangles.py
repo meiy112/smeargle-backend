@@ -42,7 +42,7 @@ if __name__ == "__main__":
     
     result = {
         "title": title,
-        "rectangles": rects
+        "data": rects
     }
 
     print(json.dumps(result))

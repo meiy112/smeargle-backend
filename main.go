@@ -14,50 +14,8 @@ import (
     "github.com/gin-gonic/gin"
 )
 
-type Layer struct {
-    Title  string `json:"title"`
-    Canvas string `json:"canvas"`
-}
-
 type ProcessRequest struct {
     Layers []Layer `json:"layers"`
-}
-
-func processLayer(layer Layer, wg *sync.WaitGroup, results chan<- string) {
-    defer wg.Done()
-
-    data, err := base64.StdEncoding.DecodeString(layer.Canvas)
-    if err != nil {
-        results <- fmt.Sprintf("Error decoding image for %s: %v", layer.Title, err)
-        return
-    }
-
-    tmpfile, err := ioutil.TempFile("", "canvas-*.png")
-    if err != nil {
-        results <- fmt.Sprintf("Error creating temp file for %s: %v", layer.Title, err)
-        return
-    }
-    defer os.Remove(tmpfile.Name())
-    if _, err := tmpfile.Write(data); err != nil {
-        results <- fmt.Sprintf("Error writing to temp file for %s: %v", layer.Title, err)
-        return
-    }
-    tmpfile.Close()
-
-    var cmd *exec.Cmd
-    if layer.Title == "text" {
-        cmd = exec.Command("python3", "scripts/detect_text.py", tmpfile.Name())
-    } else {
-        cmd = exec.Command("python3", "scripts/detect_rectangles.py", tmpfile.Name(), layer.Title)
-    }
-
-    output, err := cmd.CombinedOutput()
-    if err != nil {
-        results <- fmt.Sprintf("Python error for %s: %v, output: %s", layer.Title, err, output)
-        return
-    }
-
-    results <- fmt.Sprintf("Result for %s: %s", layer.Title, output)
 }
 
 func main() {

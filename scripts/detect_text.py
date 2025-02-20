@@ -49,10 +49,12 @@ if __name__ == "__main__":
         sys.exit(1)
 
     image_path = sys.argv[1]
+    title = sys.argv[2]
     detected_words = detect_text(image_path)
     
     result = {
-        "words": detected_words
+        "title": title,
+        "data": detected_words
     }
 
     print(json.dumps(result))
