@@ -3,17 +3,24 @@ package service
 import (
 	"encoding/base64"
 	"io/ioutil"
-	"log"
+	"path/filepath"
 	"sync"
 	"testing"
 )
 
 func TestProcessLayer(t *testing.T) {
-	imgData, err := ioutil.ReadFile("images/smeargle.jpg")
+	absPath, err := filepath.Abs("../../images/smeargle.jpg")
 	if err != nil {
-		log.Fatalf("Error reading image file: %v", err)
+		t.Fatalf("Error getting absolute path: %v", err)
 	}
 
+	// Read the file contents.
+	imgData, err := ioutil.ReadFile(absPath)
+	if err != nil {
+		t.Fatalf("Error reading image file: %v", err)
+	}
+
+	// Encode the image data to base64.
 	sampleBase64 := base64.StdEncoding.EncodeToString(imgData)
 
 	sampleLayer := Layer{
@@ -35,8 +42,8 @@ func TestProcessLayer(t *testing.T) {
 	}
 
 	if output == "" {
-		t.Error("Expected output from processLayer, got empty string")
+		t.Error("Expected output from ProcessLayer, got empty string")
 	} else {
-		t.Logf("processLayer output: %s", output)
+		t.Logf("ProcessLayer output: %s", output)
 	}
 }

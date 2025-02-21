@@ -11,8 +11,8 @@ import (
 )
 
 type Layer struct {
-	Title  string
-	Canvas string
+	Title  string `json:"title"`
+	Canvas string `json:"canvas"`
 }
 
 type ProcessRequest struct {
