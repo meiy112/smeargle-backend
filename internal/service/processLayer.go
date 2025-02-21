@@ -48,5 +48,5 @@ func ProcessLayer(layer Layer, wg *sync.WaitGroup, results chan<- string) {
 		return
 	}
 
-	results <- fmt.Sprintf("Result for %s: %s", layer.Title, output)
+	results <- fmt.Sprintf("{\"title\": \"%s\", \"data\": %s}", layer.Title, output)
 }
