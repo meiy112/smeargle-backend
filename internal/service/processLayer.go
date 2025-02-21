@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"sync"
@@ -24,7 +23,7 @@ func ProcessLayer(layer Layer, wg *sync.WaitGroup, results chan<- string) {
 		return
 	}
 
-	tmpfile, err := ioutil.TempFile("images", "canvas-*.png")
+	tmpfile, err := ioutil.TempFile("", "canvas-*.png")
 	if err != nil {
 		results <- fmt.Sprintf("Error creating temp file for %s: %v", layer.Title, err)
 		return
@@ -38,9 +37,9 @@ func ProcessLayer(layer Layer, wg *sync.WaitGroup, results chan<- string) {
 
 	var cmd *exec.Cmd
 	if layer.Title == "Text" {
-		cmd = exec.Command("python3", "scripts/detect_text.py", tmpfile.Name(), layer.Title)
+		cmd = exec.Command("python3", "internal/scripts/detect_text.py", tmpfile.Name(), layer.Title)
 	} else {
-		cmd = exec.Command("python3", "scripts/detect_rectangles.py", tmpfile.Name(), layer.Title)
+		cmd = exec.Command("python3", "internal/scripts/detect_rectangles.py", tmpfile.Name(), layer.Title)
 	}
 
 	output, err := cmd.CombinedOutput()
@@ -50,31 +49,4 @@ func ProcessLayer(layer Layer, wg *sync.WaitGroup, results chan<- string) {
 	}
 
 	results <- fmt.Sprintf("Result for %s: %s", layer.Title, output)
-}
-
-func main() {
-	imgData, err := ioutil.ReadFile("images/smeargle.jpg")
-	if err != nil {
-		log.Fatalf("Error reading image file: %v", err)
-	}
-
-	sampleBase64 := base64.StdEncoding.EncodeToString(imgData)
-
-	sampleLayer := Layer{
-		Title:  "Box",
-		Canvas: sampleBase64,
-	}
-
-	var wg sync.WaitGroup
-	results := make(chan string, 1)
-
-	wg.Add(1)
-	go ProcessLayer(sampleLayer, &wg, results)
-
-	wg.Wait()
-	close(results)
-
-	for res := range results {
-		fmt.Println(res)
-	}
 }
