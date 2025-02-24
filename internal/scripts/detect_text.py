@@ -32,12 +32,10 @@ def detect_text(image_path):
 
             words.append({
                 "word": word_text,
-                "position": {
-                    "x": left,
-                    "y": top,
-                    "width": width,
-                    "height": height
-                },
+                "x": left,
+                "y": top,
+                "width": width,
+                "height": height,
                 "font_size": font_size
             })
 
