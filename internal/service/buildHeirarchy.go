@@ -24,6 +24,10 @@ func isInside(child, parent ComponentData) bool {
 }
 
 func BuildHierarchy(components []ComponentData) []ComponentData {
+	if len(components) == 0 {
+		return []ComponentData{}
+	}
+
 	comps := make([]ComponentData, len(components))
 	copy(comps, components)
 

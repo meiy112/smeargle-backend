@@ -8,6 +8,8 @@ def detect_rectangles(image_path, title):
     image = cv2.imread(image_path)
     if image is None:
         return []
+    
+    img_height, img_width = image.shape[:2]
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     ret, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
@@ -21,6 +23,8 @@ def detect_rectangles(image_path, title):
 
         if len(approx) == 4:
             x, y, w, h = cv2.boundingRect(approx)
+            if x == 0 and y == 0 and w == img_width and h == img_height:
+                continue
             rectangles.append({
                 "title": title,
                 "x": int(x),

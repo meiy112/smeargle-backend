@@ -21,6 +21,11 @@ type ProcessRequest struct {
 	Layers []Layer `json:"layers"`
 }
 
+type RawResult struct {
+	Title string          `json:"title"`
+	Data  json.RawMessage `json:"data"`
+}
+
 func main() {
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
@@ -54,12 +59,22 @@ func main() {
 
 		var flatComponents []service.ComponentData
 		for res := range resultsChan {
-			if res == "" {
+			fmt.Print(res)
+
+			var raw RawResult
+			if err := json.Unmarshal([]byte(res), &raw); err != nil {
+				fmt.Printf("Error unmarshalling raw result: %v\nResult: %s\n", err, res)
 				continue
 			}
+
+			if string(raw.Data) == "[]" || len(raw.Data) == 0 {
+				continue
+			}
+
 			var comp service.ComponentData
+
 			if err := json.Unmarshal([]byte(res), &comp); err != nil {
-				fmt.Printf("Error unmarshalling result: %v\nResult: %s\n", err, res)
+				fmt.Printf("Error unmarshalling final result: %v\nResult: %s\n", err, res)
 				continue
 			}
 			flatComponents = append(flatComponents, comp)
