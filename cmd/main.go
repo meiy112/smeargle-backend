@@ -54,6 +54,9 @@ func main() {
 
 		var flatComponents []service.ComponentData
 		for res := range resultsChan {
+			if res == "" {
+				continue
+			}
 			var comp service.ComponentData
 			if err := json.Unmarshal([]byte(res), &comp); err != nil {
 				fmt.Printf("Error unmarshalling result: %v\nResult: %s\n", err, res)
