@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -42,22 +44,32 @@ func main() {
 		}
 
 		var wg sync.WaitGroup
-		results := make(chan string, len(req.Layers))
+		resultsChan := make(chan string, len(req.Layers))
 		for _, layer := range req.Layers {
 			wg.Add(1)
-			go service.ProcessLayer(service.Layer{Title: layer.Title, Canvas: layer.Canvas}, &wg, results)
+			go service.ProcessLayer(service.Layer{Title: layer.Title, Canvas: layer.Canvas}, &wg, resultsChan)
 		}
 		wg.Wait()
-		close(results)
+		close(resultsChan)
 
-		var output []string
-		for res := range results {
-			output = append(output, res)
+		var flatComponents []service.ComponentData
+		for res := range resultsChan {
+			if res == "" {
+				continue
+			}
+			var comp service.ComponentData
+			if err := json.Unmarshal([]byte(res), &comp); err != nil {
+				fmt.Printf("Error unmarshalling result: %v\nResult: %s\n", err, res)
+				continue
+			}
+			flatComponents = append(flatComponents, comp)
 		}
+
+		hierarchical := service.BuildHierarchy(flatComponents)
 
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "Processed layers concurrently",
-			"results": output,
+			"results": hierarchical,
 		})
 	})
 

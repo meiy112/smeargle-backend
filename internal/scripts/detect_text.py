@@ -4,7 +4,7 @@ import pytesseract
 import sys
 import json
 
-def detect_text(image_path):
+def detect_text(image_path, title):
     image = cv2.imread(image_path)
     if image is None:
         return []
@@ -31,13 +31,12 @@ def detect_text(image_path):
             font_size = height
 
             words.append({
+                "title": title,
                 "word": word_text,
-                "position": {
-                    "x": left,
-                    "y": top,
-                    "width": width,
-                    "height": height
-                },
+                "x": left,
+                "y": top,
+                "width": width,
+                "height": height,
                 "font_size": font_size
             })
 
@@ -50,11 +49,6 @@ if __name__ == "__main__":
 
     image_path = sys.argv[1]
     title = sys.argv[2]
-    detected_words = detect_text(image_path)
-    
-    result = {
-        "title": title,
-        "data": detected_words
-    }
+    detected_words = detect_text(image_path, title)
 
-    print(json.dumps(result))
+    print(json.dumps(detected_words))

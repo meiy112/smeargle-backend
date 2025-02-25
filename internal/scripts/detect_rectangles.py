@@ -4,7 +4,7 @@ import numpy as np
 import sys
 import json
 
-def detect_rectangles(image_path):
+def detect_rectangles(image_path, title):
     image = cv2.imread(image_path)
     if image is None:
         return []
@@ -22,6 +22,7 @@ def detect_rectangles(image_path):
         if len(approx) == 4:
             x, y, w, h = cv2.boundingRect(approx)
             rectangles.append({
+                "title": title,
                 "x": int(x),
                 "y": int(y),
                 "width": int(w),
@@ -38,11 +39,6 @@ if __name__ == "__main__":
     image_path = sys.argv[1]
     title = sys.argv[2]
 
-    rects = detect_rectangles(image_path)
-    
-    result = {
-        "title": title,
-        "data": rects
-    }
+    rects = detect_rectangles(image_path, title)
 
-    print(json.dumps(result))
+    print(json.dumps(rects))
