@@ -2,11 +2,14 @@ package service
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 type Layer struct {
@@ -14,23 +17,38 @@ type Layer struct {
 	Canvas string
 }
 
-func ProcessLayer(layer Layer, wg *sync.WaitGroup, results chan<- string) {
+type ComponentData struct {
+	ID       string          `json:"id"`
+	Title    string          `json:"title"`
+	X        int             `json:"x"`
+	Y        int             `json:"y"`
+	Width    int             `json:"width"`
+	Height   int             `json:"height"`
+	Word     string          `json:"word,omitempty"`
+	FontSize int             `json:"font_size,omitempty"`
+	Children []ComponentData `json:"children,omitempty"`
+}
+
+func ProcessLayer(layer Layer, wg *sync.WaitGroup, results chan<- []ComponentData) {
 	defer wg.Done()
 
 	data, err := base64.StdEncoding.DecodeString(layer.Canvas)
 	if err != nil {
-		results <- fmt.Sprintf("Error decoding image for %s: %v", layer.Title, err)
+		fmt.Printf("Error decoding image for %s: %v", layer.Title, err)
+		results <- nil
 		return
 	}
 
 	tmpfile, err := ioutil.TempFile("", "canvas-*.png")
 	if err != nil {
-		results <- fmt.Sprintf("Error creating temp file for %s: %v", layer.Title, err)
+		fmt.Printf("Error creating temp file for %s: %v", layer.Title, err)
+		results <- nil
 		return
 	}
 	defer os.Remove(tmpfile.Name())
 	if _, err := tmpfile.Write(data); err != nil {
-		results <- fmt.Sprintf("Error writing to temp file for %s: %v", layer.Title, err)
+		fmt.Printf("Error writing to temp file for %s: %v", layer.Title, err)
+		results <- nil
 		return
 	}
 	tmpfile.Close()
@@ -44,9 +62,21 @@ func ProcessLayer(layer Layer, wg *sync.WaitGroup, results chan<- string) {
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		results <- fmt.Sprintf("Python error for %s: %v, output: %s", layer.Title, err, output)
+		fmt.Printf("Python error for %s: %v, output: %s", layer.Title, err, output)
+		results <- nil
 		return
 	}
 
-	results <- fmt.Sprintf("{\"title\": \"%s\", \"data\": %s}", layer.Title, output)
+	var parsedData []ComponentData
+	if err := json.Unmarshal(output, &parsedData); err != nil {
+		fmt.Printf("Error parsing JSON for %s: %v\n", layer.Title, err)
+		results <- nil
+		return
+	}
+
+	for i := range parsedData {
+		parsedData[i].ID = uuid.New().String()
+	}
+
+	results <- parsedData
 }

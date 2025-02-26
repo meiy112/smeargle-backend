@@ -4,18 +4,6 @@ import (
 	"sort"
 )
 
-type ComponentData struct {
-	ID       string          `json:"id"`
-	Title    string          `json:"title"`
-	X        int             `json:"x"`
-	Y        int             `json:"y"`
-	Width    int             `json:"width"`
-	Height   int             `json:"height"`
-	Word     string          `json:"word,omitempty"`
-	FontSize int             `json:"font_size,omitempty"`
-	Children []ComponentData `json:"children,omitempty"`
-}
-
 func isInside(child, parent ComponentData) bool {
 	return child.X >= parent.X &&
 		child.Y >= parent.Y &&

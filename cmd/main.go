@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
@@ -19,11 +18,6 @@ type Layer struct {
 
 type ProcessRequest struct {
 	Layers []Layer `json:"layers"`
-}
-
-type RawResult struct {
-	Title string          `json:"title"`
-	Data  json.RawMessage `json:"data"`
 }
 
 func main() {
@@ -49,7 +43,7 @@ func main() {
 		}
 
 		var wg sync.WaitGroup
-		resultsChan := make(chan string, len(req.Layers))
+		resultsChan := make(chan []service.ComponentData, len(req.Layers))
 		for _, layer := range req.Layers {
 			wg.Add(1)
 			go service.ProcessLayer(service.Layer{Title: layer.Title, Canvas: layer.Canvas}, &wg, resultsChan)
@@ -57,28 +51,29 @@ func main() {
 		wg.Wait()
 		close(resultsChan)
 
-		var flatComponents []service.ComponentData
-		for res := range resultsChan {
-			fmt.Print(res)
+		flatComponents := []service.ComponentData{}
 
-			var raw RawResult
-			if err := json.Unmarshal([]byte(res), &raw); err != nil {
-				fmt.Printf("Error unmarshalling raw result: %v\nResult: %s\n", err, res)
+		for components := range resultsChan {
+			fmt.Println("Received components:", components)
+
+			if len(components) == 0 {
 				continue
 			}
 
-			if string(raw.Data) == "[]" || len(raw.Data) == 0 {
-				continue
+			var validComponents []service.ComponentData
+			for _, comp := range components {
+				if comp.Width == 0 && comp.Height == 0 && comp.Word == "" {
+					continue
+				}
+				validComponents = append(validComponents, comp)
 			}
 
-			var comp service.ComponentData
-
-			if err := json.Unmarshal([]byte(res), &comp); err != nil {
-				fmt.Printf("Error unmarshalling final result: %v\nResult: %s\n", err, res)
-				continue
+			if len(validComponents) > 0 {
+				flatComponents = append(flatComponents, validComponents...)
 			}
-			flatComponents = append(flatComponents, comp)
 		}
+
+		fmt.Print("flat components: ", flatComponents)
 
 		hierarchical := service.BuildHierarchy(flatComponents)
 
