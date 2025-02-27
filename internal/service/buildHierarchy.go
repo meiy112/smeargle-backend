@@ -4,18 +4,6 @@ import (
 	"sort"
 )
 
-type ComponentData struct {
-	ID       string          `json:"id"`
-	Title    string          `json:"title"`
-	X        int             `json:"x"`
-	Y        int             `json:"y"`
-	Width    int             `json:"width"`
-	Height   int             `json:"height"`
-	Word     string          `json:"word,omitempty"`
-	FontSize int             `json:"font_size,omitempty"`
-	Children []ComponentData `json:"children,omitempty"`
-}
-
 func isInside(child, parent ComponentData) bool {
 	return child.X >= parent.X &&
 		child.Y >= parent.Y &&
@@ -24,6 +12,10 @@ func isInside(child, parent ComponentData) bool {
 }
 
 func BuildHierarchy(components []ComponentData) []ComponentData {
+	if len(components) == 0 {
+		return []ComponentData{}
+	}
+
 	comps := make([]ComponentData, len(components))
 	copy(comps, components)
 
@@ -37,6 +29,10 @@ func BuildHierarchy(components []ComponentData) []ComponentData {
 
 	for i := 0; i < len(comps); i++ {
 		for j := i + 1; j < len(comps); j++ {
+			if comps[i].ID == comps[j].ID {
+				continue
+			}
+
 			if isInside(comps[i], comps[j]) {
 				comps[j].Children = append(comps[j].Children, comps[i])
 				assigned[i] = true

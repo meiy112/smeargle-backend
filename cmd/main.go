@@ -1,11 +1,11 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
+
+	"fmt"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -44,7 +44,7 @@ func main() {
 		}
 
 		var wg sync.WaitGroup
-		resultsChan := make(chan string, len(req.Layers))
+		resultsChan := make(chan []service.ComponentData, len(req.Layers))
 		for _, layer := range req.Layers {
 			wg.Add(1)
 			go service.ProcessLayer(service.Layer{Title: layer.Title, Canvas: layer.Canvas}, &wg, resultsChan)
@@ -52,17 +52,29 @@ func main() {
 		wg.Wait()
 		close(resultsChan)
 
-		var flatComponents []service.ComponentData
-		for res := range resultsChan {
-			if res == "" {
+		flatComponents := []service.ComponentData{}
+
+		for components := range resultsChan {
+
+			if len(components) == 0 {
 				continue
 			}
-			var comp service.ComponentData
-			if err := json.Unmarshal([]byte(res), &comp); err != nil {
-				fmt.Printf("Error unmarshalling result: %v\nResult: %s\n", err, res)
-				continue
+
+			var validComponents []service.ComponentData
+			for _, comp := range components {
+				if comp.Width == 0 && comp.Height == 0 && comp.Word == "" {
+					continue
+				}
+				validComponents = append(validComponents, comp)
 			}
-			flatComponents = append(flatComponents, comp)
+
+			if len(validComponents) > 0 {
+				flatComponents = append(flatComponents, validComponents...)
+			}
+		}
+
+		for index, component := range flatComponents {
+			fmt.Print("index", index, component)
 		}
 
 		hierarchical := service.BuildHierarchy(flatComponents)
