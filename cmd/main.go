@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -51,32 +50,15 @@ func main() {
 		wg.Wait()
 		close(resultsChan)
 
-		flatComponents := []service.ComponentData{}
+		hierarchical := []service.ComponentData{}
 
 		for components := range resultsChan {
-
 			if len(components) == 0 {
 				continue
 			}
-
-			var validComponents []service.ComponentData
-			for _, comp := range components {
-				if comp.Width == 0 && comp.Height == 0 && comp.Word == "" {
-					continue
-				}
-				validComponents = append(validComponents, comp)
-			}
-
-			if len(validComponents) > 0 {
-				fmt.Print("background colour:", components[0].BackgroundColor)
-				fmt.Print(", border colour:", components[0].BorderColor)
-				fmt.Print(", height:", components[0].Height)
-
-				flatComponents = append(flatComponents, validComponents...)
-			}
+			// Since the Python script returns hierarchical data, we can directly append.
+			hierarchical = append(hierarchical, components...)
 		}
-
-		hierarchical := service.BuildHierarchy(flatComponents)
 
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "Processed layers concurrently",

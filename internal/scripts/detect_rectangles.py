@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import sys
 import json
+import uuid
 
 def color_list_to_hex(color):
     """
@@ -11,36 +12,6 @@ def color_list_to_hex(color):
     if color is None:
         return None
     return "#{:02x}{:02x}{:02x}".format(color[2], color[1], color[0])
-
-
-def iou(rect1, rect2):
-    x1 = max(rect1["x"], rect2["x"])
-    y1 = max(rect1["y"], rect2["y"])
-    x2 = min(rect1["x"] + rect1["width"], rect2["x"] + rect2["width"])
-    y2 = min(rect1["y"] + rect1["height"], rect2["y"] + rect2["height"])
-    inter_area = max(0, x2 - x1) * max(0, y2 - y1)
-    area1 = rect1["width"] * rect1["height"]
-    area2 = rect2["width"] * rect2["height"]
-    union_area = area1 + area2 - inter_area
-    return inter_area / union_area if union_area > 0 else 0
-
-def non_max_suppression(rectangles, iou_threshold=0.9):
-    if not rectangles:
-        return []
-    
-    rectangles = sorted(rectangles, key=lambda r: r["width"] * r["height"], reverse=True)
-    kept = []
-    
-    while rectangles:
-        current = rectangles.pop(0)
-        kept.append(current)
-        new_rects = []
-        for rect in rectangles:
-            if iou(current, rect) < iou_threshold:
-                new_rects.append(rect)
-        rectangles = new_rects
-    
-    return kept
 
 def detect_border_and_background(image, rect, candidate_border=5, transparent_threshold=0.7):
     x, y, w, h = rect["x"], rect["y"], rect["width"], rect["height"]
@@ -84,11 +55,7 @@ def detect_border_and_background(image, rect, candidate_border=5, transparent_th
     
     return candidate_border, border_color_val, background_color_val
 
-def detect_rectangles(image_path, title):
-    image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
-    if image is None:
-        return []
-    
+def detect_rectangles_recursive(image, title, offset_x=0, offset_y=0, min_size=50):
     img_height, img_width = image.shape[:2]
     
     if image.shape[2] == 4:
@@ -100,12 +67,10 @@ def detect_rectangles(image_path, title):
         gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
         cv2.THRESH_BINARY_INV, 11, 2
     )
-    
     kernel = np.ones((3, 3), np.uint8)
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
     
-    contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     rectangles = []
     min_area = (img_width * img_height) * 0.001
     
@@ -116,39 +81,54 @@ def detect_rectangles(image_path, title):
         
         epsilon = 0.05 * cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, epsilon, True)
-        
         if len(approx) == 4 and cv2.isContourConvex(approx):
             x, y, w, h = cv2.boundingRect(approx)
             if x == 0 and y == 0 and w == img_width and h == img_height:
                 continue
-            
             aspect_ratio = w / h if h > 0 else 0
             if aspect_ratio < 0.2 or aspect_ratio > 5:
                 continue
             
             rect = {
                 "title": title,
-                "x": int(x),
-                "y": int(y),
+                "x": int(x + offset_x),
+                "y": int(y + offset_y),
                 "width": int(w),
                 "height": int(h)
             }
+            
+            bw, bcolor, bgcolor = detect_border_and_background(image, {"x": x, "y": y, "width": w, "height": h}, candidate_border=5, transparent_threshold=0.5)
+            rect["border_width"] = bw
+            rect["border_color"] = bcolor
+            rect["background_color"] = bgcolor
+            
+            if bw > 0:
+                rect["x"] += bw
+                rect["y"] += bw
+                rect["width"] -= 2 * bw
+                rect["height"] -= 2 * bw
+            
             rectangles.append(rect)
     
-    rectangles = non_max_suppression(rectangles, iou_threshold=0.9)
-    
     for rect in rectangles:
-        border_width, border_color, background_color = detect_border_and_background(image, rect, candidate_border=5, transparent_threshold=0.5)
-        rect["border_width"] = border_width
-        rect["border_color"] = border_color
-        rect["background_color"] = background_color
-        if border_width > 0:
-            rect["x"] += border_width
-            rect["y"] += border_width
-            rect["width"] -= 2 * border_width
-            rect["height"] -= 2 * border_width
-    
+        if rect["width"] >= min_size and rect["height"] >= min_size:
+            inner_x = rect["x"]
+            inner_y = rect["y"]
+            inner_w = rect["width"]
+            inner_h = rect["height"]
+            sub_offset_x = inner_x - offset_x
+            sub_offset_y = inner_y - offset_y
+            inner_image = image[sub_offset_y:sub_offset_y+inner_h, sub_offset_x:sub_offset_x+inner_w]
+            children = detect_rectangles_recursive(inner_image, title, offset_x=inner_x, offset_y=inner_y, min_size=min_size)
+            if children:
+                rect["children"] = children
     return rectangles
+
+def assign_ids(rectangles):
+    for rect in rectangles:
+        rect["id"] = str(uuid.uuid4())
+        if "children" in rect and rect["children"]:
+            assign_ids(rect["children"])
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
@@ -158,5 +138,11 @@ if __name__ == "__main__":
     image_path = sys.argv[1]
     title = sys.argv[2]
     
-    rects = detect_rectangles(image_path, title)
+    image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+    if image is None:
+        print(json.dumps([]))
+        sys.exit(0)
+    
+    rects = detect_rectangles_recursive(image, title, offset_x=0, offset_y=0, min_size=50)
+    assign_ids(rects)
     print(json.dumps(rects, indent=2))

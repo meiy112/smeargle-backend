@@ -18,7 +18,6 @@ type Layer struct {
 }
 
 type ComponentData struct {
-	// Common attributes for both types
 	ID       string          `json:"id"`
 	Title    string          `json:"title"`
 	X        int             `json:"x"`
@@ -67,6 +66,7 @@ func ProcessLayer(layer Layer, wg *sync.WaitGroup, results chan<- []ComponentDat
 	if layer.Title == "Text" {
 		cmd = exec.Command("python3", "internal/scripts/detect_text.py", tmpfile.Name(), layer.Title)
 	} else {
+		// Call the upgraded recursive rectangle detection script.
 		cmd = exec.Command("python3", "internal/scripts/detect_rectangles.py", tmpfile.Name(), layer.Title)
 	}
 
@@ -85,7 +85,9 @@ func ProcessLayer(layer Layer, wg *sync.WaitGroup, results chan<- []ComponentDat
 	}
 
 	for i := range parsedData {
-		parsedData[i].ID = uuid.New().String()
+		if parsedData[i].ID == "" {
+			parsedData[i].ID = uuid.New().String()
+		}
 	}
 
 	results <- parsedData
