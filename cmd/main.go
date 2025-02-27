@@ -1,11 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
-
-	"fmt"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -69,12 +68,12 @@ func main() {
 			}
 
 			if len(validComponents) > 0 {
+				fmt.Print("background colour:", components[0].BackgroundColor)
+				fmt.Print(", border colour:", components[0].BorderColor)
+				fmt.Print(", height:", components[0].Height)
+
 				flatComponents = append(flatComponents, validComponents...)
 			}
-		}
-
-		for index, component := range flatComponents {
-			fmt.Print("index", index, component)
 		}
 
 		hierarchical := service.BuildHierarchy(flatComponents)

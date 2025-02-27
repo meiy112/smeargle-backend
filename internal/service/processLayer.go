@@ -18,15 +18,25 @@ type Layer struct {
 }
 
 type ComponentData struct {
+	// Common attributes for both types
 	ID       string          `json:"id"`
 	Title    string          `json:"title"`
 	X        int             `json:"x"`
 	Y        int             `json:"y"`
 	Width    int             `json:"width"`
 	Height   int             `json:"height"`
-	Word     string          `json:"word,omitempty"`
-	FontSize int             `json:"font_size,omitempty"`
 	Children []ComponentData `json:"children,omitempty"`
+
+	// Text-specific attributes
+	Word       string  `json:"word,omitempty"`
+	FontSize   int     `json:"font_size,omitempty"`
+	FontColor  string  `json:"font_color,omitempty"`
+	FontWeight float64 `json:"font_weight,omitempty"`
+
+	// Rectangle-specific attributes
+	BorderWidth     int    `json:"border_width,omitempty"`
+	BorderColor     string `json:"border_color,omitempty"`
+	BackgroundColor string `json:"background_color,omitempty"`
 }
 
 func ProcessLayer(layer Layer, wg *sync.WaitGroup, results chan<- []ComponentData) {
