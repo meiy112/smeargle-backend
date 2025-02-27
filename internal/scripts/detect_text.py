@@ -27,7 +27,6 @@ def detect_text(image_path, title):
             top = int(ocr_data['top'][i])
             width = int(ocr_data['width'][i])
             height = int(ocr_data['height'][i])
-            # Use the height of the bounding box as an approximation of the font size.
             font_size = height
 
             words.append({

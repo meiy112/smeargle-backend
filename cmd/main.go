@@ -1,10 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
+
+	"fmt"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -54,7 +55,6 @@ func main() {
 		flatComponents := []service.ComponentData{}
 
 		for components := range resultsChan {
-			fmt.Println("Received components:", components)
 
 			if len(components) == 0 {
 				continue
@@ -73,7 +73,9 @@ func main() {
 			}
 		}
 
-		fmt.Print("flat components: ", flatComponents)
+		for index, component := range flatComponents {
+			fmt.Print("index", index, component)
+		}
 
 		hierarchical := service.BuildHierarchy(flatComponents)
 

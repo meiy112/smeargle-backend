@@ -29,6 +29,10 @@ func BuildHierarchy(components []ComponentData) []ComponentData {
 
 	for i := 0; i < len(comps); i++ {
 		for j := i + 1; j < len(comps); j++ {
+			if comps[i].ID == comps[j].ID {
+				continue
+			}
+
 			if isInside(comps[i], comps[j]) {
 				comps[j].Children = append(comps[j].Children, comps[i])
 				assigned[i] = true
