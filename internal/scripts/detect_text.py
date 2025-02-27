@@ -5,32 +5,12 @@ import sys
 import json
 
 def estimate_font_color(image, rect):
-    """
-    Estimate the font color by averaging the pixels in the text region.
-    
-    Args:
-      image: The original BGR image.
-      rect: Dictionary with keys "x", "y", "width", "height".
-      
-    Returns:
-      A tuple (B, G, R) representing the average color.
-    """
     x, y, w, h = rect['x'], rect['y'], rect['width'], rect['height']
     roi = image[y:y+h, x:x+w]
     avg_color = cv2.mean(roi)[:3]
     return tuple(map(int, avg_color))
 
 def estimate_font_weight(image, rect):
-    """
-    Estimate an approximate stroke width (font weight) for the text in rect.
-    
-    Args:
-      image: The original BGR image.
-      rect: Dictionary with keys "x", "y", "width", "height".
-      
-    Returns:
-      A float representing the estimated stroke width.
-    """
     x, y, w, h = rect['x'], rect['y'], rect['width'], rect['height']
     roi = image[y:y+h, x:x+w]
     

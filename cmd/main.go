@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -51,14 +52,14 @@ func main() {
 		close(resultsChan)
 
 		hierarchical := []service.ComponentData{}
-
 		for components := range resultsChan {
 			if len(components) == 0 {
 				continue
 			}
-			// Since the Python script returns hierarchical data, we can directly append.
 			hierarchical = append(hierarchical, components...)
 		}
+
+		fmt.Print("border colour", hierarchical[0].BorderColor)
 
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "Processed layers concurrently",
