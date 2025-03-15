@@ -5,13 +5,14 @@ import (
 )
 
 func isInside(child, parent ComponentData) bool {
-	return child.X >= parent.X &&
-		child.Y >= parent.Y &&
-		(child.X+child.Width) <= (parent.X+parent.Width) &&
-		(child.Y+child.Height) <= (parent.Y+parent.Height)
+	return child.X > parent.X &&
+		child.Y > parent.Y &&
+		(child.X+child.Width) < (parent.X+parent.Width) &&
+		(child.Y+child.Height) < (parent.Y+parent.Height)
 }
 
 func BuildHierarchy(components []ComponentData) []ComponentData {
+
 	if len(components) == 0 {
 		return []ComponentData{}
 	}
@@ -29,6 +30,7 @@ func BuildHierarchy(components []ComponentData) []ComponentData {
 
 	for i := 0; i < len(comps); i++ {
 		for j := i + 1; j < len(comps); j++ {
+
 			if comps[i].ID == comps[j].ID {
 				continue
 			}

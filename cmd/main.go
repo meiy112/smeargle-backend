@@ -1,11 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
-
-	"fmt"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -52,32 +51,15 @@ func main() {
 		wg.Wait()
 		close(resultsChan)
 
-		flatComponents := []service.ComponentData{}
-
+		hierarchical := []service.ComponentData{}
 		for components := range resultsChan {
-
 			if len(components) == 0 {
 				continue
 			}
-
-			var validComponents []service.ComponentData
-			for _, comp := range components {
-				if comp.Width == 0 && comp.Height == 0 && comp.Word == "" {
-					continue
-				}
-				validComponents = append(validComponents, comp)
-			}
-
-			if len(validComponents) > 0 {
-				flatComponents = append(flatComponents, validComponents...)
-			}
+			hierarchical = append(hierarchical, components...)
 		}
 
-		for index, component := range flatComponents {
-			fmt.Print("index", index, component)
-		}
-
-		hierarchical := service.BuildHierarchy(flatComponents)
+		fmt.Print("border colour", hierarchical[0].BorderColor)
 
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "Processed layers concurrently",
